@@ -43,8 +43,8 @@ uv run wpilog-current-analysis /path/to/log.wpilog -o /path/to/output.csv --repo
 
 ## Outputs
 
-- Default CSV: `<log_name>_current_summary.csv`
-- Default report directory: `<csv_stem>_report`
+- Default CSV: `generated/<log_name>/<log_name>_current_summary.csv`
+- Default report directory: `generated/<log_name>/report`
 - Report entrypoint: `<report_dir>/index.html`
 
 ## Important Columns

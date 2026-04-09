@@ -566,7 +566,12 @@ def build_report_assets(
     return df, sections
 
 
-def dataframe_table_html(df: pd.DataFrame, columns: list[str]) -> str:
+def dataframe_table_html(
+    df: pd.DataFrame,
+    columns: list[str],
+    row_phase_column: str | None = None,
+    row_metric_column: str | None = None,
+) -> str:
     header = "".join(f"<th>{html.escape(column)}</th>" for column in columns)
     body_rows: list[str] = []
     for _, row in df.iterrows():
@@ -578,7 +583,13 @@ def dataframe_table_html(df: pd.DataFrame, columns: list[str]) -> str:
             else:
                 text = str(value)
             cells.append(f"<td>{html.escape(text)}</td>")
-        body_rows.append("<tr>" + "".join(cells) + "</tr>")
+        attrs: list[str] = []
+        if row_phase_column is not None and row_phase_column in df.columns:
+            attrs.append(f"data-phase='{html.escape(str(row[row_phase_column]))}'")
+        if row_metric_column is not None and row_metric_column in df.columns:
+            attrs.append(f"data-metric='{html.escape(str(row[row_metric_column]))}'")
+        attr_text = (" " + " ".join(attrs)) if attrs else ""
+        body_rows.append(f"<tr{attr_text}>" + "".join(cells) + "</tr>")
     return f"<table border='1' cellspacing='0' cellpadding='4'><thead><tr>{header}</tr></thead><tbody>{''.join(body_rows)}</tbody></table>"
 
 
@@ -655,34 +666,58 @@ def write_html_report(
             "<h2>Coverage</h2>",
             "<p>Expected signals that were absent from the log.</p>",
             "<p><img src='coverage.png' alt='Topic coverage' width='820'></p>",
-            "<h2>Top Enabled Rows</h2>",
-            "<p>Highest top-bucket rows among direct mechanisms across all phases.</p>",
-            dataframe_table_html(top_rows, ["phase", "subsystem", "metric", "average", "top_bucket_avg", "max"]),
+            "<div class='table-section' data-table-kind='top'>",
+            "<h2>Top Rows</h2>",
+            "<p>Highest top-bucket rows among direct mechanisms. Filtered by the selectors above.</p>",
+            dataframe_table_html(
+                top_rows,
+                ["phase", "subsystem", "metric", "average", "top_bucket_avg", "max"],
+                row_phase_column="phase",
+                row_metric_column="metric",
+            ),
+            "</div>",
+            "<div class='table-section' data-table-kind='supply' data-metric='Supply Current'>",
             "<h2>Supply Rows</h2>",
-            "<p>All supply-current CSV rows.</p>",
+            "<p>All supply-current CSV rows. Filtered by phase.</p>",
             dataframe_table_html(
                 supply_rows,
                 ["phase", "subsystem", "metric", "phase_seconds", "average", "p95", "max", "top_bucket_avg"]
                 + bucket_cols,
+                row_phase_column="phase",
+                row_metric_column="metric",
             ),
+            "</div>",
+            "<div class='table-section' data-table-kind='stator' data-metric='Stator Current'>",
             "<h2>Stator Rows</h2>",
-            "<p>All stator-current CSV rows.</p>",
+            "<p>All stator-current CSV rows. Filtered by phase.</p>",
             dataframe_table_html(
                 stator_rows,
                 ["phase", "subsystem", "metric", "phase_seconds", "average", "p95", "max", "top_bucket_avg"]
                 + bucket_cols,
+                row_phase_column="phase",
+                row_metric_column="metric",
             ),
+            "</div>",
+            "<div class='table-section' data-table-kind='other'>",
             "<h2>Other Rows</h2>",
-            "<p>Non-supply/stator CSV rows.</p>",
+            "<p>Non-supply/stator CSV rows. Filtered by phase.</p>",
             dataframe_table_html(
                 other_rows,
                 ["phase", "subsystem", "metric", "phase_seconds", "average", "p95", "max", "top_bucket_avg"]
                 + bucket_cols,
+                row_phase_column="phase",
+                row_metric_column="metric",
             ),
+            "</div>",
+            "<div class='table-section' data-table-kind='coverage'>",
             "<h2>Missing Coverage Rows</h2>",
             dataframe_table_html(
-                missing_rows, ["phase", "subsystem", "metric", "member_topics_present", "member_topics_expected"]
+                missing_rows,
+                ["phase", "subsystem", "metric", "member_topics_present", "member_topics_expected"],
+                row_phase_column="phase",
+                row_metric_column="metric",
             ),
+            "</div>",
             """
 <script>
 function updateSections() {
@@ -691,6 +726,21 @@ function updateSections() {
   document.querySelectorAll('.toggle-section').forEach((section) => {
     const matches = section.dataset.phase === phase && section.dataset.metric === metric;
     section.hidden = !matches;
+  });
+  document.querySelectorAll('.table-section').forEach((section) => {
+    const sectionMetric = section.dataset.metric;
+    if (sectionMetric) {
+      section.hidden = sectionMetric !== metric;
+    } else {
+      section.hidden = false;
+    }
+  });
+  document.querySelectorAll('tr[data-phase]').forEach((row) => {
+    const rowPhase = row.dataset.phase;
+    const rowMetric = row.dataset.metric;
+    const phaseMatches = rowPhase === phase;
+    const metricMatches = !rowMetric || rowMetric === metric;
+    row.hidden = !(phaseMatches && metricMatches);
   });
 }
 document.getElementById('phaseSelect').addEventListener('change', updateSections);
@@ -751,8 +801,18 @@ def parse_args() -> argparse.Namespace:
 def main() -> None:
     args = parse_args()
     log_path = args.log_path.resolve()
-    output_path = args.output.resolve() if args.output else log_path.with_name(f"{log_path.stem}_current_summary.csv")
-    report_dir = args.report_dir.resolve() if args.report_dir else output_path.with_name(f"{output_path.stem}_report")
+    default_output_root = Path(__file__).resolve().parent / "generated"
+    default_base_dir = default_output_root / log_path.stem
+    output_path = (
+        args.output.resolve()
+        if args.output
+        else default_base_dir / f"{log_path.stem}_current_summary.csv"
+    )
+    report_dir = (
+        args.report_dir.resolve()
+        if args.report_dir
+        else default_base_dir / "report"
+    )
 
     result = analyze_log(log_path, args.quantiles)
     write_csv(result.rows, output_path)
