@@ -1,0 +1,16 @@
+[project]
+name = "wpilog-current-analysis"
+version = "0.1.0"
+description = "Summarize enabled-period subsystem current draw from WPILOG files"
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+    "matplotlib>=3.10.8",
+    "numpy>=2.4.4",
+    "pandas>=3.0.2",
+    "plotly>=6.6.0",
+    "robotpy-wpiutil>=2026.2.2",
+]
+
+[project.scripts]
+wpilog-current-analysis = "main:main"
