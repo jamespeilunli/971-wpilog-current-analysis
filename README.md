@@ -21,30 +21,30 @@ The HTML report includes:
 Default run:
 
 ```bash
-uv run wpilog-current-analysis /path/to/log.wpilog
+uv run main.py /path/to/log.wpilog
 ```
 
 CSV only:
 
 ```bash
-uv run wpilog-current-analysis /path/to/log.wpilog --no-report
+uv run main.py /path/to/log.wpilog --no-report
 ```
 
 Choose the number of current buckets:
 
 ```bash
-uv run wpilog-current-analysis /path/to/log.wpilog --quantiles 8
+uv run main.py /path/to/log.wpilog --quantiles 8
 ```
 
 Choose output paths:
 
 ```bash
-uv run wpilog-current-analysis /path/to/log.wpilog -o /path/to/output.csv --report-dir /path/to/report_dir
+uv run main.py /path/to/log.wpilog -o /path/to/output.csv --report-dir /path/to/report_dir
 ```
 
 ## Outputs
 
-- Default output root: `wpilog-current-analysis/generated/`
+- Default output root: `generated/`
 - Default CSV: `generated/<log_name>/<log_name>_current_summary.csv`
 - Default report directory: `generated/<log_name>/report`
 - Report entrypoint: `<report_dir>/index.html`
