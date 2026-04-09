@@ -14,6 +14,7 @@ The HTML report includes:
 - Smaller graphs sized for a normal browser window
 - Top 5 direct-mechanism current time-series plots
 - Full CSV data rendered into readable tables
+- Graphs and table rows filtered by the selected phase/metric
 
 ## Usage
 
@@ -43,9 +44,11 @@ uv run wpilog-current-analysis /path/to/log.wpilog -o /path/to/output.csv --repo
 
 ## Outputs
 
+- Default output root: `wpilog-current-analysis/generated/`
 - Default CSV: `generated/<log_name>/<log_name>_current_summary.csv`
 - Default report directory: `generated/<log_name>/report`
 - Report entrypoint: `<report_dir>/index.html`
+- The `generated/` folder is gitignored
 
 ## Important Columns
 
@@ -56,3 +59,9 @@ uv run wpilog-current-analysis /path/to/log.wpilog -o /path/to/output.csv --repo
 - `bucket_*_avg`: One column per configured bucket
 - `member_topics_expected`: How many motor topics the subsystem expects from the robot code mapping
 - `member_topics_present`: How many of those topics were actually found in the log
+
+## Report Notes
+
+- The report shows one phase/metric combination at a time through the two selectors.
+- `Supply Rows` and `Stator Rows` are sorted by descending `average`.
+- `Other Rows` contains non-supply/stator metrics such as battery voltage/current and any directly logged aggregates.
