@@ -64,7 +64,7 @@ DIRECT_AGGREGATES: dict[str, dict[str, str]] = {
     }
 }
 
-CORE_MECHANISMS = list(MOTOR_GROUPS.keys())
+CORE_MECHANISMS = list(MOTOR_GROUPS.keys()) + ["Drive"]
 DERIVED_SUMMARIES = list(DERIVED_GROUPS.keys()) + ["Drive"]
 
 
