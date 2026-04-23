@@ -818,6 +818,10 @@ def main() -> None:
     write_csv(result.rows, output_path)
     print(output_path)
 
+    from checks import run_checks
+    check_report = run_checks(log_path)
+    check_report.print_summary()
+
     if not args.no_report:
         html_path = generate_report(result, report_dir, log_path, output_path, args.quantiles)
         print(html_path)
